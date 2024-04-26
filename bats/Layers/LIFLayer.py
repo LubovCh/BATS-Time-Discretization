@@ -9,7 +9,7 @@ from bats.CudaKernels.Wrappers.Backpropagation import *
 
 
 class LIFLayer(AbstractLayer):
-    def __init__(self, previous_layer: AbstractLayer, tau_s: float, theta: float, delta_theta: float,
+    def __init__(self, previous_layer: AbstractLayer, tau_s: float, theta: float, delta_theta: float, time_delta: float,
                  weight_initializer: Callable[[int, int], cp.ndarray] = None, max_n_spike: int = 32, **kwargs):
         super().__init__(**kwargs)
         self.__previous_layer: AbstractLayer = previous_layer
@@ -28,6 +28,7 @@ class LIFLayer(AbstractLayer):
         self.__a: Optional[cp.ndarray] = None
         self.__x: Optional[cp.ndarray] = None
         self.__post_exp_tau: Optional[cp.ndarray] = None
+        self.__time_delta: cp.float32 = cp.float32(time_delta)
 
         self.__pre_exp_tau_s: Optional[cp.ndarray] = None
         self.__pre_exp_tau: Optional[cp.ndarray] = None
@@ -88,7 +89,7 @@ class LIFLayer(AbstractLayer):
             self.__post_exp_tau = compute_spike_times(sorted_spike_times, sorted_pre_exp_tau_s, sorted_pre_exp_tau,
                                                       pre_spike_weights, self.__c,
                                                       self.__delta_theta_tau,
-                                                      self.__tau, cp.float32(max_simulation), self.__max_n_spike)
+                                                      self.__tau, self.__time_delta, cp.float32(max_simulation), self.__max_n_spike)
 
     def backward(self, errors: cp.array) -> Optional[Tuple[cp.ndarray, cp.ndarray]]:
         # Compute gradient

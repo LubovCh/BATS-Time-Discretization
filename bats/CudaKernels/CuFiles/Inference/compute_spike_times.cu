@@ -43,6 +43,7 @@ extern "C" {
                                    float next_spike,
                                    float delta_theta_tau,
                                    float tau,
+                                   float time_delta,
                                    float max_simulation,
                                    int neuron_idx,
                                    int max_n_post_spike,
@@ -65,6 +66,19 @@ extern "C" {
                 return false;
 
             tmp = tau * __logf(inside_log);
+            
+            // Discretize to next time step
+            if (time_delta != 0.0f) {
+            	tmp = tmp + (time_delta - fmodf(tmp, time_delta));
+            }
+            
+            float potential = tau * ((*cumul_b) * __expf(-tmp / tau) - cumul_a * __expf(-2 * tmp / tau));
+            
+            // 0.0001 can be adjusted depending on desired margin for error
+            if (potential + 0.0001 < (c * tau)) {
+            	return false;
+            }
+            
             // Spike time is before the last pre-spike or after the next spike --> stop
             if (tmp <= last_spike || tmp > max_simulation || tmp > next_spike)
                 return false;
@@ -91,10 +105,11 @@ extern "C" {
                                                const float c,
                                                float delta_theta_tau,
                                                float tau,
+                                               float time_delta,
                                                float max_simulation,
                                                int max_n_pre_spike,
                                                int max_n_post_spike,
-                                               // Outputs
+                                               // Outputs	
                                                int *n_spikes,
                                                float *a,
                                                float *x,
@@ -103,7 +118,6 @@ extern "C" {
         int n_neurons = gridDim.x;
         int sample_idx = threadIdx.x;
         int neuron_idx = blockIdx.x;
-
 
         get_sample_params(&spike_times, &exp_tau_s, &exp_tau, &spike_weights,
                           n_neurons, sample_idx, neuron_idx, max_n_pre_spike);
@@ -131,7 +145,7 @@ extern "C" {
                 next_spike = INFINITY;
 
             if (compute_spikes(c, n_spikes, a, x, out_spike_times, post_exp_tau,
-                               cumul_a, &cumul_b, spike_times[i], next_spike, delta_theta_tau, tau,
+                               cumul_a, &cumul_b, spike_times[i], next_spike, delta_theta_tau, tau, time_delta,
                                max_simulation, neuron_idx, max_n_post_spike, sample_idx))
                 break; // Buffer full
         }

@@ -11,7 +11,7 @@ __compute_spike_times_kernel = load_kernel(KERNEL_FILE, KERNEL_NAME)
 def compute_spike_times(spike_times: cp.ndarray,
                         exp_tau_s: cp.ndarray, exp_tau: cp.ndarray,
                         spike_weights: cp.ndarray,
-                        c: cp.float32, delta_theta_tau: np.float32, tau: np.float32,
+                        c: cp.float32, delta_theta_tau: np.float32, tau: np.float32, time_delta: np.float32,
                         max_simulation: np.float32, max_n_post_spikes: np.int32):
     batch_size, n_neurons, max_n_pre_spike = spike_weights.shape
     block_dim = (batch_size, 1, 1)
@@ -24,9 +24,10 @@ def compute_spike_times(spike_times: cp.ndarray,
     post_spike_times = cp.full(res_shape, cp.inf, dtype=cp.float32)
     post_exp_tau = cp.full(res_shape, cp.inf, dtype=cp.float32)
 
-    args = (spike_times, exp_tau_s, exp_tau, spike_weights, c, delta_theta_tau, tau,
+    args = (spike_times, exp_tau_s, exp_tau, spike_weights, c, delta_theta_tau, tau, time_delta,
             max_simulation, max_n_pre_spike, max_n_post_spikes,
             n_spikes, a, x, post_spike_times, post_exp_tau)
+    
     __compute_spike_times_kernel(grid_dim, block_dim, args)
 
     return n_spikes, a, x, post_spike_times, post_exp_tau

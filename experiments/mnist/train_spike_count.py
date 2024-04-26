@@ -19,6 +19,9 @@ DATASET_PATH = Path("../../datasets/mnist.npz")
 N_INPUTS = 28 * 28
 SIMULATION_TIME = 0.2
 
+# At this time step the network seems to self destruct
+DT = 0.01
+
 # Hidden layer
 N_NEURONS_1 = 800
 TAU_S_1 = 0.130
@@ -85,6 +88,7 @@ if __name__ == "__main__":
     hidden_layer = LIFLayer(previous_layer=input_layer, n_neurons=N_NEURONS_1, tau_s=TAU_S_1,
                             theta=THRESHOLD_HAT_1,
                             delta_theta=DELTA_THRESHOLD_1,
+                            time_delta = DT,
                             weight_initializer=weight_initializer,
                             max_n_spike=SPIKE_BUFFER_SIZE_1,
                             name="Hidden layer 1")
@@ -93,6 +97,7 @@ if __name__ == "__main__":
     output_layer = LIFLayer(previous_layer=hidden_layer, n_neurons=N_OUTPUTS, tau_s=TAU_S_OUTPUT,
                             theta=THRESHOLD_HAT_OUTPUT,
                             delta_theta=DELTA_THRESHOLD_OUTPUT,
+                            time_delta = DT,
                             weight_initializer=weight_initializer,
                             max_n_spike=SPIKE_BUFFER_SIZE_OUTPUT,
                             name="Output layer")
