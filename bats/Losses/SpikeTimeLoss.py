@@ -40,6 +40,7 @@ class SpikeTimeLoss(AbstractLoss):
             -> Tuple[cp.ndarray, cp.ndarray]:
         spikes_per_neuron_cpy = cp.copy(spikes_per_neuron)
         spikes_per_neuron_cpy[cp.isinf(spikes_per_neuron)] = cp.float32(1.0)
+        targets = cp.array(targets)
         targets[cp.isinf(targets)] = cp.float32(1.0)
         targets = cp.array(targets, dtype=cp.float32)
         errors = spikes_per_neuron - targets

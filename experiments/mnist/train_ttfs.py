@@ -3,8 +3,9 @@ import cupy as cp
 import numpy as np
 
 import sys
+import os
 
-sys.path.insert(0, "../../")  # Add repository root to python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from Dataset import Dataset
 from bats.Monitors import *
@@ -14,11 +15,11 @@ from bats.Network import Network
 from bats.Optimizers import *
 
 # Dataset
-DATASET_PATH = Path("../../datasets/mnist.npz")
+DATASET_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../datasets/mnist.npz"))
 
 N_INPUTS = 28 * 28
 SIMULATION_TIME = 1.0
-
+DT = 0.001
 # Hidden layer
 N_NEURONS_1 = 800
 TAU_S_1 = 0.130
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 
     if EXPORT_METRICS and not EXPORT_DIR.exists():
         EXPORT_DIR.mkdir()
-
+    
     # Dataset
     print("Loading datasets...")
     dataset = Dataset(path=DATASET_PATH)
@@ -86,16 +87,18 @@ if __name__ == "__main__":
     network.add_layer(input_layer, input=True)
 
     hidden_layer = LIFLayer(previous_layer=input_layer, n_neurons=N_NEURONS_1, tau_s=TAU_S_1,
-                            theta=THRESHOLD_HAT_1,
-                            delta_theta=DELTA_THRESHOLD_1,
-                            weight_initializer=weight_initializer,
-                            max_n_spike=SPIKE_BUFFER_SIZE_1,
-                            name="Hidden layer 1")
+                                theta=THRESHOLD_HAT_1,
+                                delta_theta=DELTA_THRESHOLD_1,
+                                time_delta=DT,
+                                weight_initializer=weight_initializer,
+                                max_n_spike=SPIKE_BUFFER_SIZE_1,
+                                name="Hidden layer 1")
     network.add_layer(hidden_layer)
 
     output_layer = LIFLayer(previous_layer=hidden_layer, n_neurons=N_OUTPUTS, tau_s=TAU_S_OUTPUT,
                             theta=THRESHOLD_HAT_OUTPUT,
                             delta_theta=DELTA_THRESHOLD_OUTPUT,
+                            time_delta=DT,
                             weight_initializer=weight_initializer_out,
                             max_n_spike=SPIKE_BUFFER_SIZE_OUTPUT,
                             name="Output layer")

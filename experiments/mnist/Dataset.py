@@ -4,11 +4,9 @@ from elasticdeform import deform_random_grid
 import warnings
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter, map_coordinates
-
-warnings.filterwarnings("ignore")
-
 from tensorflow import keras
 import numpy as np
+from decimal import Decimal
 
 TIME_WINDOW = 100e-3
 MAX_VALUE = 255
@@ -39,7 +37,8 @@ def elastic_transform(image, alpha_range, sigma):
 
 
 class Dataset:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, dt: float) -> None:
+        self.dt = dt
         loaded_data = np.load(path, allow_pickle=True)
         self.__train_X = loaded_data['x_train']
         self.__train_labels = loaded_data['y_train']
@@ -63,12 +62,31 @@ class Dataset:
     def test_labels(self) -> np.ndarray:
         return self.__test_labels
 
+    def discretize_spike(self, spike):
+        if np.isfinite(spike):
+            d_lj_k = self.dt - float(Decimal(float(spike)) % Decimal(self.dt))  # Correction according to the formula
+            return spike + d_lj_k
+        else:
+            return np.inf
+
+
     def __to_spikes(self, samples):
         spike_times = samples.reshape((samples.shape[0], N_NEURONS, 1))
+        
+        if self.dt > 0.001:
+            dfunc = np.vectorize(self.discretize_spike)
+            discretize_spikes = dfunc(spike_times)
+        else:
+            discretize_spikes = spike_times
+        discretize_spikes = TIME_WINDOW * (1 - (discretize_spikes / MAX_VALUE))
+        discretize_spikes[discretize_spikes == TIME_WINDOW] = np.inf
+
         spike_times = TIME_WINDOW * (1 - (spike_times / MAX_VALUE))
         spike_times[spike_times == TIME_WINDOW] = np.inf
-        n_spike_per_neuron = np.isfinite(spike_times).astype('int').reshape((samples.shape[0], N_NEURONS))
-        return spike_times, n_spike_per_neuron
+        
+                
+        n_spike_per_neuron = np.isfinite(discretize_spikes).astype('int').reshape((samples.shape[0], N_NEURONS))
+        return discretize_spikes, n_spike_per_neuron, spike_times
 
     def shuffle(self) -> None:
         shuffled_indices = np.arange(len(self.__train_labels))
@@ -98,8 +116,8 @@ class Dataset:
             plt.show()
             exit()"""
 
-        spikes_per_neuron, n_spikes_per_neuron = self.__to_spikes(samples)
-        return spikes_per_neuron, n_spikes_per_neuron, labels
+        spikes_per_neuron, n_spikes_per_neuron, spikes = self.__to_spikes(samples)
+        return spikes_per_neuron, n_spikes_per_neuron, spikes, labels
 
     def get_train_batch(self, batch_index: int, batch_size: int, augment: bool = False) -> \
             Tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -1,0 +1,17 @@
+datasets/
+datasets/468j46mzdv-1/
+.venv/
+
+.venv/Lib/
+.idea/
+.idea/bats.iml
+bats/__pycache__/
+**/__pycache__/
+expermiments/nmnist/data/
+bats/Lib/
+*.bin
+data/
+*.npz
+cache/
+bats/Scripts/
+

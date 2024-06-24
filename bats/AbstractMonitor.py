@@ -4,6 +4,8 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+import cupy as cp
+import scipy
 
 
 class AbstractMonitor(ABC):
@@ -36,10 +38,20 @@ class AbstractMonitor(ABC):
     def export(self) -> None:
         if self._export_path is None:
             return
-        np.savez(self._export_path, epochs=self._epochs, values=self._values)
+        epochs = np.array(self._epochs)
+
+        if isinstance(self._values, list):
+            values = np.array(self._values)
+        else:
+            values = cp.asnumpy(self._values)
+        np.savez(self._export_path, epochs=epochs, values=values)
 
         plt.plot(self._epochs, self._values)
         plt.xlabel("Epoch")
         plt.ylabel(self._name)
         plt.savefig(self._export_path.with_suffix('.png'))
         plt.close()
+
+    def convergence_rate(self) -> float:
+        convergence_rate = scipy.trapz((self._values), dx=1)
+        return convergence_rate

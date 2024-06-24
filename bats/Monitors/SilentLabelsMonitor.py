@@ -16,6 +16,8 @@ class SilentLabelsMonitor(AbstractMonitor):
         self._n_samples += targets.shape[0]
 
     def record(self, epoch) -> float:
+        if self._n_samples == 0:
+            return 0
         silent_ratio = self._silent_labels / self._n_samples * 100
         super()._record(epoch, silent_ratio)
         self._silent_labels = 0
